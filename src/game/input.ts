@@ -1,12 +1,7 @@
 import * as Phaser from 'phaser';
 
-export type Action = 'left' | 'right' | 'jump' | 'run' | 'charge' | 'shoot' | 'punch' | 'ssj' | 'kaioken' | 'restore';
-
-/** Botões da tela de toque (celular). Escritos pela interface React, lidos pelo jogo. */
-export const touchState: Record<Action, boolean> = {
-  left: false, right: false, jump: false, run: false, charge: false,
-  shoot: false, punch: false, ssj: false, kaioken: false, restore: false,
-};
+import { touchState, type Action } from './touch';
+export { touchState, type Action };
 
 const KEYMAP: Record<Action, string[]> = {
   left: ['LEFT', 'A'],
