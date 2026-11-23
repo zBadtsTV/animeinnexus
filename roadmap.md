@@ -3,4 +3,8 @@
 - [x] Recortar e alinhar os cinco sprites enviados, preservando as demais ações.
 - [x] Verificar passos, Kaioken parado e as duas transformações no jogo.
 - [x] Recortar os movimentos de Kaioken e Sayajin e as novas sequências de carga de ki.
-- [x] Verificar movimentos, pulos e carga de ki no jogo, preservando tiros e transformações.- [x] Diminuir sprite do Naruto transformado (Kyubi)
+- [x] Verificar movimentos, pulos e carga de ki no jogo, preservando tiros e transformações.
+- [x] Diminuir sprite do Naruto transformado (Kyubi)
+- [ ] Corrigir desconexões e movimento sincronizado no online.
+- [ ] Remover a colisão com o teto nos dois modos.
+- [ ] Uniformizar o tamanho do Goku nas formas, cargas e reversões, inclusive online.
