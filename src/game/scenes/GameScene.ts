@@ -117,7 +117,7 @@ export class GameScene extends Phaser.Scene {
   private remoteBalls!: Phaser.Physics.Arcade.Group;
   private solids: Phaser.GameObjects.GameObject[] = [];
   private dummies: Dummy[] = [];
-  private remote?: Remote;
+  private remote: Remote | undefined;
   private hud!: Hud;
   private enemyHud?: Hud;
   private hintText!: Phaser.GameObjects.Text;

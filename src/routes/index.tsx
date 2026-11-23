@@ -18,14 +18,14 @@ export const Route = createFileRoute("/")({
 function Index() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    let game: { destroy: (b: boolean) => void } | undefined;
+    let game: { destroy: (b: boolean, n: boolean) => void } | undefined;
     let cancelled = false;
     import("../game/startGame").then(({ startGame }) => {
       if (!cancelled && ref.current) game = startGame(ref.current);
     });
     return () => {
       cancelled = true;
-      game?.destroy(true);
+      game?.destroy(true, false);
     };
   }, []);
   return <div ref={ref} className="h-screen w-screen bg-foreground" />;
