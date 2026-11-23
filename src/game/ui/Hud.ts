@@ -63,7 +63,7 @@ export class Hud {
     this.g.clear();
     const hpColor = form === 'kaioken' ? 0xff3b3b : hp <= 20 ? 0xff4444 : 0xffa024;
     this.fill(geo.hp, hp / 100, hpColor);
-    let enColor = this.ch === 'naruto' ? 0x25d6ff : energy >= 100 ? 0xffd54a : 0x39a0ff;
+    let enColor = form === 'kyubi' ? 0xff5a2a : this.ch === 'naruto' ? 0x25d6ff : energy >= 100 ? 0xffd54a : 0x39a0ff;
     if (this.flash > 0) {
       this.flash -= delta;
       enColor = 0xff4444;

@@ -13,7 +13,7 @@ from PIL import Image
 from scipy import ndimage
 
 CELL_W, CELL_H, FEET, AX = 256, 300, 280, 128
-TARGET_H = {'goku': 188, 'naruto': 178}
+TARGET_H = {'kyubi': 215, 'goku': 188, 'naruto': 178}
 
 # (output, file, row index, columns in that row, character, rows in sheet)
 SPECS = [
@@ -27,6 +27,14 @@ SPECS = [
     ('naruto_punch', 'sprites_socos_naruto_base_e_1_cauda_1672x941.png', 0, 8, 'naruto'),
     ('naruto_charge_a', 'Animação de Carga de Chakra do Naruto.png', 0, 8, 'naruto'),
     ('naruto_charge_b', 'Animação de Carga de Chakra do Naruto.png', 1, 8, 'naruto'),
+    ('naruto_kyubi_idle', 'Folha de sprites do ninja feral em pixel art.png', 0, 8, 'kyubi'),
+    ('naruto_kyubi_walk', 'Folha de sprites do ninja feral em pixel art.png', 1, 8, 'kyubi'),
+    ('naruto_kyubi_run', 'Folha de sprites do ninja feral em pixel art.png', 2, 8, 'kyubi'),
+    ('naruto_kyubi_air', 'Folha de sprites do ninja feral em pixel art.png', 3, 8, 'kyubi'),
+    ('naruto_kyubi_punch', 'sprites_socos_naruto_base_e_1_cauda_1672x941.png', 1, 8, 'kyubi'),
+    ('naruto_kyubi_ras_a', 'Sprite Sheet_ Investida de Chakra Rubro.png', 0, 8, 'kyubi'),
+    ('naruto_kyubi_ras_b', 'Sprite Sheet_ Investida de Chakra Rubro.png', 1, 8, 'kyubi'),
+    ('naruto_kyubi_ras_c', 'Sprite Sheet_ Investida de Chakra Rubro.png', 3, 8, 'kyubi'),
     ('goku_punch_normal', 'Spritesheet de Ataque do Goku em Pixel Art.png', 0, 8, 'goku'),
     ('goku_punch_ssj', 'Spritesheet de Ataque do Goku em Pixel Art.png', 1, 8, 'goku'),
     ('goku_punch_kaioken', 'Spritesheet de Ataque do Goku em Pixel Art.png', 2, 8, 'goku'),

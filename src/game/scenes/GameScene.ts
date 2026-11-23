@@ -200,7 +200,7 @@ export class GameScene extends Phaser.Scene {
     if (this.cfg.mode === 'single') {
       this.add
         .text(width - 12, height - 10,
-          '← → andar · Shift correr · Espaço pular · E soco · C carregar · Q ' + (this.cfg.character === 'naruto' ? 'Rasengan' : 'ki (segure) · G SSJ · K Kaioken') + ' · H restaurar',
+          '← → andar · Shift correr · Espaço pular · E soco · C carregar · Q ' + (this.cfg.character === 'naruto' ? 'Rasengan · G modo 1 cauda' : 'ki (segure) · G SSJ · K Kaioken') + ' · H restaurar',
           { fontFamily: 'monospace', fontSize: '12px', color: '#fff' })
         .setOrigin(1, 1)
         .setShadow(1, 1, '#000', 2)

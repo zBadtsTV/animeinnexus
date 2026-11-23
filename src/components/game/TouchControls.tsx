@@ -32,6 +32,7 @@ export function TouchControls() {
         <Btn img={SCREEN_IMAGES.btn_right} action="right" label="Direita" className="size-16" />
       </div>
       <div className="absolute bottom-4 right-4 flex items-end gap-3">
+        <Btn img={SCREEN_IMAGES.btn_special} action="ssj" label="Transformar" className="mb-28 size-12 opacity-80 hue-rotate-180" />
         <Btn img={SCREEN_IMAGES.btn_special} action="charge" label="Carregar" className="mb-14 size-14 opacity-80" />
         <Btn img={SCREEN_IMAGES.btn_special} action="shoot" label="Especial" className="size-16" />
         <Btn img={SCREEN_IMAGES.btn_punch} action="punch" label="Soco" className="size-20" />

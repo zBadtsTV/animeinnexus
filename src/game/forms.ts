@@ -34,6 +34,12 @@ export const PUNCH_DAMAGE = 6;
 export const KI_BALL_DAMAGE = 5; // x tamanho da bola
 export const RASENGAN_DAMAGE = 22;
 export const RASENGAN_COST = 30; // chakra
+// --- Naruto modo 1 cauda (tecla G): precisa de chakra cheio, gasta chakra e desliga em 0 ---
+export const KYUBI_MIN_CHAKRA = 100;
+export const KYUBI_CHAKRA_DRAIN_PER_SEC = 5;
+export const KYUBI_DAMAGE_MULT = 1.6;
+export const KYUBI_SPEED_MULT = 1.25;
+export const KYUBI_RASENGAN_COST = 20;
 export const RESPAWN_FALL_DAMAGE = 20;
 export const FORM_DAMAGE_MULT: Record<FormId, number> = { normal: 1, kaioken: 1.5, ssj: 1.8 };
 

@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import type { Controls } from '../input';
 import { OVERRIDE_ANCHOR } from '../spriteOverrides';
-import { PowerState, PUNCH_DAMAGE, RASENGAN_COST, RASENGAN_DAMAGE } from '../forms';
+import { KYUBI_CHAKRA_DRAIN_PER_SEC, KYUBI_DAMAGE_MULT, KYUBI_MIN_CHAKRA, KYUBI_RASENGAN_COST, KYUBI_SPEED_MULT, PowerState, PUNCH_DAMAGE, RASENGAN_COST, RASENGAN_DAMAGE } from '../forms';
 import { SCALE } from './Player';
 
 const WALK_SPEED = 160;
@@ -13,7 +13,8 @@ const BODY_H = 180;
 const HITSTUN_MS = 260;
 const ALL = [0, 1, 2, 3, 4, 5, 6, 7];
 
-type Action = 'none' | 'punch' | 'ras-charge' | 'ras-dash' | 'ras-hit';
+type Action = 'none' | 'punch' | 'ras-charge' | 'ras-dash' | 'ras-hit' | 'transform';
+export type NarutoForm = 'normal' | 'kyubi';
 
 /** Naruto: chakra no lugar do ki, soco (E) e Rasengan (Q). Todas as tiras olham para a direita. */
 export class Naruto extends Phaser.Physics.Arcade.Sprite {
@@ -26,6 +27,8 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
   private chargeIntroDone = false;
   private wasOnGround = false;
   private landTimer = 0;
+  private kyubi = false;
+  private transformTimer = 0;
 
   get hp(): number {
     return this.power.hp;
@@ -33,8 +36,16 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
   get energy(): number {
     return this.power.ki;
   }
-  get form(): 'normal' {
-    return 'normal';
+  get form(): NarutoForm {
+    return this.kyubi ? 'kyubi' : 'normal';
+  }
+
+  /** Prefixo das animações da forma atual. */
+  private get p(): string {
+    return this.kyubi ? 'kyubi' : 'naruto';
+  }
+  private get dmgMult(): number {
+    return this.kyubi ? KYUBI_DAMAGE_MULT : 1;
   }
 
   static createAnimations(scene: Phaser.Scene): void {
@@ -54,6 +65,20 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
     make('naruto:ras-hit', 'naruto_rasengan_c', ALL, 16, 0);
     make('naruto:charge-start', 'naruto_charge_a', ALL, 12, 0);
     make('naruto:charge-loop', 'naruto_charge_b', ALL, 12, -1);
+    make('kyubi:idle', 'naruto_kyubi_idle', ALL, 8, -1);
+    make('kyubi:walk', 'naruto_kyubi_walk', ALL, 11, -1);
+    make('kyubi:run', 'naruto_kyubi_run', ALL, 16, -1);
+    make('kyubi:jump', 'naruto_kyubi_air', [1, 2, 3], 12, 0);
+    make('kyubi:fall', 'naruto_kyubi_air', [4, 5], 8, 0);
+    make('kyubi:land', 'naruto_kyubi_air', [6, 7], 14, 0);
+    make('kyubi:punch', 'naruto_kyubi_punch', ALL, 20, 0);
+    make('kyubi:ras-charge', 'naruto_kyubi_ras_a', ALL, 16, 0);
+    make('kyubi:ras-dash', 'naruto_kyubi_ras_b', ALL, 20, 0);
+    make('kyubi:ras-hit', 'naruto_kyubi_ras_c', ALL, 16, 0);
+    make('kyubi:charge-start', 'naruto_kyubi_idle', ALL, 12, 0);
+    make('kyubi:charge-loop', 'naruto_kyubi_idle', ALL, 14, -1);
+    make('naruto:transform', 'naruto_charge_b', [...ALL, ...ALL], 16, 0);
+    make('kyubi:transform', 'naruto_charge_b', [...ALL, ...ALL], 16, 0);
   }
 
   constructor(scene: Phaser.Scene, x: number, y: number, private controls: Controls) {
@@ -66,18 +91,20 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
     this.syncAnchor();
 
     this.on(Phaser.Animations.Events.ANIMATION_UPDATE, (anim: Phaser.Animations.Animation, frame: Phaser.Animations.AnimationFrame) => {
-      if (this.action === 'punch' && anim.key === 'naruto:punch' && frame.index === 5) this.melee(95, PUNCH_DAMAGE);
+      if (this.action === 'punch' && anim.key.endsWith(':punch') && frame.index === 5) this.melee(95, PUNCH_DAMAGE * this.dmgMult);
       if (this.action === 'ras-hit' && !this.hitDone && frame.index >= 5) {
         this.hitDone = true;
-        this.melee(130, RASENGAN_DAMAGE);
+        this.melee(130, RASENGAN_DAMAGE * this.dmgMult);
         this.scene.cameras.main.shake(140, 0.006);
       }
     });
     this.on(Phaser.Animations.Events.ANIMATION_COMPLETE, (anim: Phaser.Animations.Animation) => {
-      if (anim.key === 'naruto:charge-start') this.chargeIntroDone = true;
-      if (anim.key === 'naruto:punch' || anim.key === 'naruto:ras-hit') this.action = 'none';
-      if (anim.key === 'naruto:ras-charge') this.setAction('ras-dash');
-      if (anim.key === 'naruto:ras-dash') this.setAction('ras-hit');
+      const k = anim.key.split(':')[1];
+      if (k === 'charge-start') this.chargeIntroDone = true;
+      if (k === 'punch' || k === 'ras-hit') this.action = 'none';
+      if (k === 'ras-charge') this.setAction('ras-dash');
+      if (k === 'ras-dash') this.setAction('ras-hit');
+      if (k === 'transform') this.finishTransform();
     });
   }
 
@@ -90,12 +117,34 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
     this.action = a;
     this.hitDone = false;
     this.setFlipX(this.facing === -1);
-    this.anims.play(`naruto:${a}`);
+    this.anims.play(`${this.p}:${a}`);
+  }
+
+  private startTransform(): void {
+    this.setVelocityX(0);
+    this.setAction('transform');
+    this.setTint(0xff5040);
+    this.scene.cameras.main.shake(700, 0.004);
+    this.emit('hint', 'MODO 1 CAUDA!');
+  }
+
+  private finishTransform(): void {
+    this.action = 'none';
+    this.clearTint();
+    this.kyubi = true;
+    this.scene.cameras.main.flash(180, 255, 80, 60);
+  }
+
+  private endKyubi(): void {
+    if (!this.kyubi) return;
+    this.kyubi = false;
+    this.emit('hint', 'O chakra acabou: voltou ao normal');
   }
 
   takeHit(dmg: number, dir: number): boolean {
     const ko = this.power.damage(dmg);
     this.stun = HITSTUN_MS;
+    if (this.action === 'transform') this.clearTint();
     this.action = 'none';
     this.setVelocity(dir * 260, -220);
     this.setTintFill(0xffffff);
@@ -119,6 +168,10 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
     const onGround = body.blocked.down || body.touching.down;
     const c = this.controls;
     if (c.pressed('restore')) this.power.restore();
+    if (this.kyubi) {
+      this.power.ki = Math.max(0, this.power.ki - (KYUBI_CHAKRA_DRAIN_PER_SEC * delta) / 1000);
+      if (this.power.ki <= 0) this.endKyubi();
+    }
     if (!c.down('charge')) this.chargeIntroDone = false;
     if (onGround && !this.wasOnGround) this.landTimer = 140;
     this.wasOnGround = onGround;
@@ -131,14 +184,22 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.action === 'none') {
-      if (c.pressed('punch')) this.setAction('punch');
+      const cost = this.kyubi ? KYUBI_RASENGAN_COST : RASENGAN_COST;
+      if (c.pressed('ssj') && onGround) {
+        if (this.kyubi) this.endKyubi();
+        else if (this.power.ki >= KYUBI_MIN_CHAKRA) this.startTransform();
+        else {
+          this.emit('no-ki');
+          this.emit('hint', 'Modo 1 cauda precisa de chakra cheio: segure C');
+        }
+      } else if (c.pressed('punch')) this.setAction('punch');
       else if (c.pressed('shoot') && onGround) {
-        if (this.power.ki >= RASENGAN_COST) {
-          this.power.spendKi(RASENGAN_COST);
+        if (this.power.ki >= cost) {
+          this.power.spendKi(cost);
           this.setAction('ras-charge');
         } else {
           this.emit('no-ki');
-          this.emit('hint', `Rasengan precisa de ${RASENGAN_COST}% de chakra: segure C`);
+          this.emit('hint', `Rasengan precisa de ${cost}% de chakra: segure C`);
         }
       }
     }
@@ -156,21 +217,22 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
       this.power.charge(delta);
       this.setVelocityX(0);
       this.setFlipX(this.facing === -1);
-      this.playAnim(this.chargeIntroDone ? 'naruto:charge-loop' : 'naruto:charge-start');
+      this.playAnim(`${this.p}:${this.chargeIntroDone ? 'charge-loop' : 'charge-start'}`);
       this.syncAnchor();
       return;
     }
 
     const dir = (Number(c.down('right')) - Number(c.down('left'))) as -1 | 0 | 1;
     const running = c.down('run');
-    this.setVelocityX(dir * (running ? RUN_SPEED : WALK_SPEED));
+    this.setVelocityX(dir * (running ? RUN_SPEED : WALK_SPEED) * (this.kyubi ? KYUBI_SPEED_MULT : 1));
     if (dir !== 0) this.facing = dir;
     if (c.down('jump') && onGround) this.setVelocityY(-JUMP_SPEED);
     this.setFlipX(this.facing === -1);
-    if (!onGround) this.playAnim(body.velocity.y < 0 ? 'naruto:jump' : 'naruto:fall');
-    else if (dir !== 0) this.playAnim(running ? 'naruto:run' : 'naruto:walk');
-    else if (this.landTimer > 0) this.playAnim('naruto:land');
-    else this.playAnim('naruto:idle');
+    const p = this.p;
+    if (!onGround) this.playAnim(body.velocity.y < 0 ? `${p}:jump` : `${p}:fall`);
+    else if (dir !== 0) this.playAnim(running ? `${p}:run` : `${p}:walk`);
+    else if (this.landTimer > 0) this.playAnim(`${p}:land`);
+    else this.playAnim(`${p}:idle`);
     this.syncAnchor();
   }
 

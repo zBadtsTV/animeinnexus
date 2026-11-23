@@ -9,6 +9,14 @@ import naruto_rasengan_c from './assets/naruto_rasengan_c.png.asset.json';
 import naruto_punch from './assets/naruto_punch.png.asset.json';
 import naruto_charge_a from './assets/naruto_charge_a.png.asset.json';
 import naruto_charge_b from './assets/naruto_charge_b.png.asset.json';
+import naruto_kyubi_idle from './assets/naruto_kyubi_idle.png.asset.json';
+import naruto_kyubi_walk from './assets/naruto_kyubi_walk.png.asset.json';
+import naruto_kyubi_run from './assets/naruto_kyubi_run.png.asset.json';
+import naruto_kyubi_air from './assets/naruto_kyubi_air.png.asset.json';
+import naruto_kyubi_punch from './assets/naruto_kyubi_punch.png.asset.json';
+import naruto_kyubi_ras_a from './assets/naruto_kyubi_ras_a.png.asset.json';
+import naruto_kyubi_ras_b from './assets/naruto_kyubi_ras_b.png.asset.json';
+import naruto_kyubi_ras_c from './assets/naruto_kyubi_ras_c.png.asset.json';
 import goku_punch_normal from './assets/goku_punch_normal.png.asset.json';
 import goku_punch_ssj from './assets/goku_punch_ssj.png.asset.json';
 import goku_punch_kaioken from './assets/goku_punch_kaioken.png.asset.json';
@@ -35,6 +43,14 @@ export const FIGHTER_STRIPS: Record<string, string> = {
   naruto_punch: naruto_punch.url,
   naruto_charge_a: naruto_charge_a.url,
   naruto_charge_b: naruto_charge_b.url,
+  naruto_kyubi_idle: naruto_kyubi_idle.url,
+  naruto_kyubi_walk: naruto_kyubi_walk.url,
+  naruto_kyubi_run: naruto_kyubi_run.url,
+  naruto_kyubi_air: naruto_kyubi_air.url,
+  naruto_kyubi_punch: naruto_kyubi_punch.url,
+  naruto_kyubi_ras_a: naruto_kyubi_ras_a.url,
+  naruto_kyubi_ras_b: naruto_kyubi_ras_b.url,
+  naruto_kyubi_ras_c: naruto_kyubi_ras_c.url,
   goku_punch_normal: goku_punch_normal.url,
   goku_punch_ssj: goku_punch_ssj.url,
   goku_punch_kaioken: goku_punch_kaioken.url,
