@@ -21,7 +21,7 @@ function Index() {
     let game: { destroy: (b: boolean, n: boolean) => void } | undefined;
     let cancelled = false;
     import("../game/startGame").then(({ startGame }) => {
-      if (!cancelled && ref.current) game = startGame(ref.current);
+      if (!cancelled && ref.current) game = startGame(ref.current, { mode: "single", character: "goku" });
     });
     return () => {
       cancelled = true;
