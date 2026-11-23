@@ -3,4 +3,4 @@
 - [x] Recortar e alinhar os cinco sprites enviados, preservando as demais ações.
 - [x] Verificar passos, Kaioken parado e as duas transformações no jogo.
 - [x] Recortar os movimentos de Kaioken e Sayajin e as novas sequências de carga de ki.
-- [x] Verificar movimentos, pulos e carga de ki no jogo, preservando tiros e transformações.
+- [x] Verificar movimentos, pulos e carga de ki no jogo, preservando tiros e transformações.- [x] Diminuir sprite do Naruto transformado (Kyubi)

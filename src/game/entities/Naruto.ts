@@ -244,6 +244,13 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
     const a = OVERRIDE_ANCHOR;
     const ox = this.flipX ? 1 - a.ax / a.w : a.ax / a.w;
     this.setOrigin(ox, a.feetY / a.h);
-    (this.body as Phaser.Physics.Arcade.Body).setOffset(ox * a.w - BODY_W / 2, a.feetY - BODY_H);
+    // Folhas do modo 1 cauda são desenhadas maiores; reduz para bater com o Naruto normal.
+    const key = this.texture.key;
+    const k = key === 'naruto_kyubi_transform' ? 0.9 : key.startsWith('naruto_kyubi') ? 0.82 : 1;
+    if (this.scaleX !== SCALE * k) this.setScale(SCALE * k);
+    const bw = BODY_W / k, bh = BODY_H / k;
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    if (body.sourceWidth !== bw) body.setSize(bw, bh, false);
+    body.setOffset(ox * a.w - bw / 2, a.feetY - bh);
   }
 }
