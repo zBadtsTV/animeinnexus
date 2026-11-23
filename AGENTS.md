@@ -33,3 +33,5 @@ use the editor.
 - Load game media through committed asset pointers so sprite updates use immutable CDN URLs.
 - Apply individually uploaded animation strips through spriteOverrides with shared foot/body anchors; leave unrelated animations and generated form metadata unchanged.
 - Determine movement mirroring from the active override key, not the form, because uploaded strips face right while generated sheets contain separate directional rows.
+- Normalize mixed-sheet body sizes through spriteGeometry and transmit the actual scale online; aura extents must not determine fighter size or hitboxes.
+- Room links bind one opposite-role peer and clear search timers on handshake completion; match ownership, not renderer cleanup, closes the connection.

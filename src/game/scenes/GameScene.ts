@@ -10,6 +10,7 @@ import { OVERRIDE_ANCHOR, SPRITE_OVERRIDES } from '../spriteOverrides';
 import { Controls } from '../input';
 import { Hud } from '../ui/Hud';
 import type { CharacterId, NetLink, NetMsg } from '../net';
+import { spriteSizeCorrection, worldBoundsCollision } from '../spriteGeometry';
 
 export interface GameConfig {
   mode: 'single' | 'multi';
@@ -89,6 +90,7 @@ class Remote implements Target {
     this.ty = m.y;
     if (this.scene.textures.exists(m.tex)) this.sprite.setTexture(m.tex, m.fr);
     this.sprite.setFlipX(m.flip).setOrigin(m.ox, m.oy);
+    this.sprite.setScale(m.scale ?? SCALE * spriteSizeCorrection(m.tex));
     this.hp = m.hp;
     this.energy = m.en;
     this.form = m.form;
@@ -172,7 +174,7 @@ export class GameScene extends Phaser.Scene {
     this.player = new C(this, this.spawn.x, this.spawn.y, this.controls);
     this.player.setDepth(5);
     for (const s of this.solids) this.physics.add.collider(this.player, s);
-    if (this.cfg.mode === 'multi') this.physics.world.setBoundsCollision(true, true, true, false);
+    this.physics.world.setBoundsCollision(...worldBoundsCollision(this.cfg.mode));
 
     this.kiBalls = this.physics.add.group({ allowGravity: false });
     this.remoteBalls = this.physics.add.group({ allowGravity: false });
@@ -214,8 +216,10 @@ export class GameScene extends Phaser.Scene {
       this.remote = new Remote(this, net, net.isHost ? 710 : 250, 260);
       this.enemyHud = new Hud(this, net.remoteCharacter, width - 348, 6, 340);
       this.offNet = net.onMessage((m) => this.onNet(m));
-      net.onClose(() => this.showHint('O outro jogador saiu da sala'));
-      this.events.once('shutdown', () => this.offNet?.());
+      const offClose = net.onClose(() => this.showHint('O outro jogador saiu da sala'));
+      const cleanup = () => { this.offNet?.(); offClose(); };
+      this.events.once('shutdown', cleanup);
+      this.events.once('destroy', cleanup);
     }
   }
 
@@ -334,7 +338,7 @@ export class GameScene extends Phaser.Scene {
       const p = this.player;
       this.cfg.net.send({
         t: 's', x: Math.round(p.x), y: Math.round(p.y), tex: p.frame.texture.key, fr: p.frame.name,
-        flip: p.flipX, ox: p.originX, oy: p.originY, hp: p.hp, en: p.energy, form: p.form,
+        flip: p.flipX, ox: p.originX, oy: p.originY, scale: p.scaleX, hp: p.hp, en: p.energy, form: p.form,
       });
     }
 

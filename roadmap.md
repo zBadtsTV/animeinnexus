@@ -8,3 +8,4 @@
 - [ ] Corrigir desconexões e movimento sincronizado no online.
 - [ ] Remover a colisão com o teto nos dois modos.
 - [ ] Uniformizar o tamanho do Goku nas formas, cargas e reversões, inclusive online.
+- [ ] Conferir movimento e ações por toque, visíveis somente no celular.

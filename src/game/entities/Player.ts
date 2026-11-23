@@ -3,6 +3,7 @@ import { FORM_SHEETS } from '../sheets';
 import { OVERRIDE_ANCHOR, SPRITE_OVERRIDES, shouldMirrorMovement } from '../spriteOverrides';
 import type { Controls } from '../input';
 import { FIGHTER_STRIPS } from '../fighterAssets';
+import { spriteSizeCorrection } from '../spriteGeometry';
 import {
   AIR_FRAMES,
   PUNCH_DAMAGE,
@@ -193,8 +194,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private fireKiBall(): void {
     const ball = FORM_SHEETS[this.visualForm].shot.ball?.[this.shotRow];
     if (!ball) return;
-    const x = this.x + this.facing * ball.dx * SCALE;
-    const y = this.y - ball.dy * SCALE;
+    const x = this.x + this.facing * ball.dx * this.scaleX;
+    const y = this.y - ball.dy * this.scaleY;
     this.emit('fire', x, y, this.facing, this.shotPower, this.visualForm);
     this.fireFrame = -1; // só uma bola por tiro
   }
@@ -465,7 +466,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const a = ANCHORS[this.frame.texture.key];
     if (!a) return;
     const ox = this.flipX ? 1 - a.ax / a.w : a.ax / a.w;
+    const correction = spriteSizeCorrection(this.frame.texture.key);
+    this.setScale(SCALE * correction);
     this.setOrigin(ox, a.feetY / a.h);
-    (this.body as Phaser.Physics.Arcade.Body).setOffset(ox * a.w - BODY_W / 2, a.feetY - BODY_H);
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const bw = BODY_W / correction, bh = BODY_H / correction;
+    if (body.sourceWidth !== bw || body.sourceHeight !== bh) body.setSize(bw, bh, false);
+    body.setOffset(ox * a.w - bw / 2, a.feetY - bh);
   }
 }

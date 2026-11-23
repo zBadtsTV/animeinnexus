@@ -9,12 +9,12 @@ describe('Uploaded sprite animation selection', () => {
   });
   it('plays complete transformations once and keeps Kaioken idle looping', () => {
     expect(SPRITE_OVERRIDES.find((sheet) => sheet.texture === 'kaioken_transform')?.frames).toEqual([0, 1, 2, 3, 4, 5, 6]);
-    expect(SPRITE_OVERRIDES.filter((sheet) => sheet.texture.endsWith('_transform')).map((sheet) => sheet.repeat)).toEqual([0, 0]);
+    expect(SPRITE_OVERRIDES.filter((sheet) => sheet.keys.some((key) => key.endsWith(':transform'))).map((sheet) => sheet.repeat)).toEqual([0, 0]);
     expect(SPRITE_OVERRIDES.find((sheet) => sheet.texture === 'kaioken_idle')?.repeat).toBe(-1);
   });
-  it('keeps anchors inside a stable cell and leaves shots and reversions untouched', () => {
+  it('keeps anchors inside a stable cell and leaves shots untouched', () => {
     expect(OVERRIDE_ANCHOR).toEqual({ w: 256, h: 300, feetY: 280, ax: 128 });
-    expect(SPRITE_OVERRIDES.flatMap((sheet) => sheet.keys).some((key) => /shot|revert/.test(key))).toBe(false);
+    expect(SPRITE_OVERRIDES.flatMap((sheet) => sheet.keys).some((key) => /shot/.test(key))).toBe(false);
   });
   it('mirrors uploaded walking and running for Kaioken and Sayajin only when facing left', () => {
     for (const form of ['kaioken', 'ssj']) {

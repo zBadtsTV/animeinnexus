@@ -7,3 +7,7 @@ export const touchState: Record<Action, boolean> = {
   shoot: false, punch: false, ssj: false, kaioken: false, restore: false,
 };
 
+export function resetTouchState(): void {
+  for (const action of Object.keys(touchState) as Action[]) touchState[action] = false;
+}
+

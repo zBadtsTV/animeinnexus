@@ -3,6 +3,7 @@ import type { Controls } from '../input';
 import { OVERRIDE_ANCHOR } from '../spriteOverrides';
 import { KYUBI_CHAKRA_DRAIN_PER_SEC, KYUBI_DAMAGE_MULT, KYUBI_MIN_CHAKRA, KYUBI_RASENGAN_COST, KYUBI_SPEED_MULT, PowerState, PUNCH_DAMAGE, RASENGAN_COST, RASENGAN_DAMAGE } from '../forms';
 import { SCALE } from './Player';
+import { spriteSizeCorrection } from '../spriteGeometry';
 
 const WALK_SPEED = 160;
 const RUN_SPEED = 320;
@@ -246,7 +247,7 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(ox, a.feetY / a.h);
     // Folhas do modo 1 cauda são desenhadas maiores; reduz para bater com o Naruto normal.
     const key = this.texture.key;
-    const k = key === 'naruto_kyubi_transform' ? 0.9 : key.startsWith('naruto_kyubi') ? 0.82 : 1;
+    const k = spriteSizeCorrection(key);
     if (this.scaleX !== SCALE * k) this.setScale(SCALE * k);
     const bw = BODY_W / k, bh = BODY_H / k;
     const body = this.body as Phaser.Physics.Arcade.Body;

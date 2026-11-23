@@ -30,6 +30,9 @@ export const SPRITE_OVERRIDES = [
   { texture: 'ssj_charge_loop', url: ssjChargeLoop.url, keys: ['ssj:charge-loop'], frames: [0, 1, 2, 3, 4, 5, 6, 7], fps: 10, repeat: -1 },
   { texture: 'ssj_walk', url: ssjWalk.url, keys: ['ssj:walk-right', 'ssj:walk-left'], frames: [0, 1, 2, 3, 4, 5, 6, 7], fps: 8, repeat: -1 },
   { texture: 'ssj_run', url: ssjRun.url, keys: ['ssj:run-right', 'ssj:run-left'], frames: [0, 1, 2, 3, 4, 5, 6], fps: 12, repeat: -1 },
+  { texture: 'ssj_charge_loop', url: ssjChargeLoop.url, keys: ['ssj:charge-start'], frames: [0, 1, 2], fps: 10, repeat: 0 },
+  { texture: 'ssj_transform', url: ssjTransform.url, keys: ['ssj:revert'], frames: [7, 6, 5, 4, 3, 2, 1, 0], fps: 12, repeat: 0 },
+  { texture: 'kaioken_transform', url: kaiokenTransform.url, keys: ['kaioken:revert'], frames: [6, 5, 4, 3, 2, 1, 0], fps: 12, repeat: 0 },
 ];
 
 export const OVERRIDE_ANCHOR = { w: 256, h: 300, feetY: 280, ax: 128 };

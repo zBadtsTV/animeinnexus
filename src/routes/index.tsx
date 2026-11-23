@@ -40,7 +40,7 @@ function Index() {
         <Lobby ch={screen.ch} onBack={() => setScreen({ s: "menu" })} onReady={(net) => setScreen({ s: "game", mode: "multi", ch: screen.ch, net })} />
       )}
       {screen.s === "game" && (
-        <Game key={Date.now()} mode={screen.mode} ch={screen.ch} net={screen.net} onExit={() => setScreen({ s: "menu" })} />
+        <Game mode={screen.mode} ch={screen.ch} net={screen.net} onExit={() => { screen.net?.close(); setScreen({ s: "menu" }); }} />
       )}
     </main>
   );
@@ -92,31 +92,31 @@ function Select({ onPick, onBack }: { onPick: (c: CharacterId) => void; onBack: 
 function Lobby({ ch, onReady, onBack }: { ch: CharacterId; onReady: (n: NetLink) => void; onBack: () => void }) {
   const [code, setCode] = useState("");
   const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
   const cancelRef = useRef<() => void>(() => {});
-  useEffect(() => () => cancelRef.current(), []);
+  const attemptRef = useRef(0);
+  useEffect(() => () => { attemptRef.current++; cancelRef.current(); }, []);
 
-  const host = async () => {
-    const net = await import("@/game/net");
-    const c = net.makeRoomCode();
-    setStatus(`Sala ${c} criada. Passe o código para seu amigo. Esperando...`);
+  const connect = async (hosting: boolean) => {
+    if (busy || (!hosting && !code.trim())) return;
+    const attempt = ++attemptRef.current;
+    cancelRef.current();
+    setBusy(true);
     try {
-      const { link, cancel } = await net.hostRoom(c, ch);
+      const net = await import("@/game/net");
+      if (attempt !== attemptRef.current) return;
+      const c = hosting ? net.makeRoomCode() : code;
+      setStatus(hosting ? `Sala ${c} criada. Passe o código para seu amigo. Esperando...` : "Entrando...");
+      const { link, cancel } = hosting ? await net.hostRoom(c, ch) : net.joinRoom(c, ch);
       cancelRef.current = cancel;
       const l = await link;
+      if (attempt !== attemptRef.current) { l.close(); return; }
       cancelRef.current = () => {};
       onReady(l);
     } catch {
-      setStatus("Não deu para criar a sala. Tente de novo.");
-    }
-  };
-  const join = async () => {
-    if (!code.trim()) return;
-    setStatus("Entrando...");
-    try {
-      const net = await import("@/game/net");
-      onReady(await net.joinRoom(code, ch));
-    } catch {
-      setStatus("Sala não encontrada.");
+      if (attempt === attemptRef.current) setStatus(hosting ? "Não deu para criar a sala. Tente de novo." : "Sala não encontrada.");
+    } finally {
+      if (attempt === attemptRef.current) setBusy(false);
     }
   };
   return (
@@ -124,7 +124,7 @@ function Lobby({ ch, onReady, onBack }: { ch: CharacterId; onReady: (n: NetLink)
       <img src={SCREEN_IMAGES.arena} alt="" className="absolute inset-0 h-full w-full object-cover brightness-50" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4 text-center">
         <h2 className="font-game text-[4vmin] text-game-gold">MULTIPLAYER</h2>
-        <button className="game-btn" onClick={host}>CRIAR SALA</button>
+        <button className="game-btn" disabled={busy} onClick={() => void connect(true)}>CRIAR SALA</button>
         <div className="flex gap-2">
           <input
             value={code}
@@ -133,7 +133,7 @@ function Lobby({ ch, onReady, onBack }: { ch: CharacterId; onReady: (n: NetLink)
             maxLength={5}
             className="w-36 rounded-md border-2 border-game-gold bg-background px-3 py-2 text-center font-game text-xl text-foreground"
           />
-          <button className="game-btn-sm" onClick={join}>ENTRAR</button>
+          <button className="game-btn-sm" disabled={busy} onClick={() => void connect(false)}>ENTRAR</button>
         </div>
         <p className="min-h-6 font-game text-lg text-background">{status}</p>
         <button className="game-btn-sm" onClick={onBack}>← Menu</button>
@@ -153,14 +153,10 @@ function Game({ mode, ch, net, onExit }: { mode: Mode; ch: CharacterId; net?: Ne
       game = startGame(ref.current, net ? { mode, character: ch, net } : { mode, character: ch });
       gameRef.current = game;
     });
-    net?.onClose(() => {
-      alert("O outro jogador saiu.");
-      onExit();
-    });
     return () => {
       cancelled = true;
       game?.destroy(true, false);
-      net?.close();
+      gameRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -173,7 +169,7 @@ function Game({ mode, ch, net, onExit }: { mode: Mode; ch: CharacterId; net?: Ne
         )}
         <button className="game-btn-sm" onClick={onExit}>Menu</button>
       </div>
-      <TouchControls />
+      <TouchControls character={ch} />
     </div>
   );
 }
