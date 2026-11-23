@@ -25,7 +25,7 @@ export class Hud {
 
   constructor(scene: Phaser.Scene, private ch: CharacterId, private x: number, private y: number, width: number) {
     this.s = width / PANEL_W;
-    this.g = scene.add.graphics().setDepth(31).setScrollFactor(0);
+    this.g = scene.add.graphics().setDepth(32.5).setScrollFactor(0);
     scene.add.image(x, y, `hud_${ch}`).setOrigin(0).setScale(this.s).setDepth(32).setScrollFactor(0);
     const geo = GEOMETRY[ch];
     const style = { fontFamily: 'monospace', fontSize: '11px', color: '#ffffff', fontStyle: 'bold' };
@@ -61,9 +61,9 @@ export class Hud {
   update(hp: number, energy: number, form: string, delta: number): void {
     const geo = GEOMETRY[this.ch];
     this.g.clear();
-    const hpColor = form === 'kaioken' ? 0xff3b3b : hp <= 20 ? 0xff4444 : 0xffa024;
+    const hpColor = 0x34d84a; // vida sempre verde
     this.fill(geo.hp, hp / 100, hpColor);
-    let enColor = form === 'kyubi' ? 0xff5a2a : this.ch === 'naruto' ? 0x25d6ff : energy >= 100 ? 0xffd54a : 0x39a0ff;
+    let enColor = 0x2f8cff; // chakra e ki sempre azuis
     if (this.flash > 0) {
       this.flash -= delta;
       enColor = 0xff4444;

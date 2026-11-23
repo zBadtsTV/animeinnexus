@@ -17,6 +17,8 @@ import naruto_kyubi_punch from './assets/naruto_kyubi_punch.png.asset.json';
 import naruto_kyubi_ras_a from './assets/naruto_kyubi_ras_a.png.asset.json';
 import naruto_kyubi_ras_b from './assets/naruto_kyubi_ras_b.png.asset.json';
 import naruto_kyubi_ras_c from './assets/naruto_kyubi_ras_c.png.asset.json';
+import naruto_kyubi_transform from './assets/naruto_kyubi_transform.png.asset.json';
+import naruto_kyubi_charge from './assets/naruto_kyubi_charge.png.asset.json';
 import goku_punch_normal from './assets/goku_punch_normal.png.asset.json';
 import goku_punch_ssj from './assets/goku_punch_ssj.png.asset.json';
 import goku_punch_kaioken from './assets/goku_punch_kaioken.png.asset.json';
@@ -51,6 +53,8 @@ export const FIGHTER_STRIPS: Record<string, string> = {
   naruto_kyubi_ras_a: naruto_kyubi_ras_a.url,
   naruto_kyubi_ras_b: naruto_kyubi_ras_b.url,
   naruto_kyubi_ras_c: naruto_kyubi_ras_c.url,
+  naruto_kyubi_transform: naruto_kyubi_transform.url,
+  naruto_kyubi_charge: naruto_kyubi_charge.url,
   goku_punch_normal: goku_punch_normal.url,
   goku_punch_ssj: goku_punch_ssj.url,
   goku_punch_kaioken: goku_punch_kaioken.url,

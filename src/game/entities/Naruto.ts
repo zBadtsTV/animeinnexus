@@ -13,7 +13,7 @@ const BODY_H = 180;
 const HITSTUN_MS = 260;
 const ALL = [0, 1, 2, 3, 4, 5, 6, 7];
 
-type Action = 'none' | 'punch' | 'ras-charge' | 'ras-dash' | 'ras-hit' | 'transform';
+type Action = 'none' | 'punch' | 'ras-charge' | 'ras-dash' | 'ras-hit' | 'transform' | 'untransform';
 export type NarutoForm = 'normal' | 'kyubi';
 
 /** Naruto: chakra no lugar do ki, soco (E) e Rasengan (Q). Todas as tiras olham para a direita. */
@@ -75,10 +75,10 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
     make('kyubi:ras-charge', 'naruto_kyubi_ras_a', ALL, 16, 0);
     make('kyubi:ras-dash', 'naruto_kyubi_ras_b', ALL, 20, 0);
     make('kyubi:ras-hit', 'naruto_kyubi_ras_c', ALL, 16, 0);
-    make('kyubi:charge-start', 'naruto_kyubi_idle', ALL, 12, 0);
-    make('kyubi:charge-loop', 'naruto_kyubi_idle', ALL, 14, -1);
-    make('naruto:transform', 'naruto_charge_b', [...ALL, ...ALL], 16, 0);
-    make('kyubi:transform', 'naruto_charge_b', [...ALL, ...ALL], 16, 0);
+    make('kyubi:charge-start', 'naruto_kyubi_charge', [0, 1, 2, 3], 10, 0);
+    make('kyubi:charge-loop', 'naruto_kyubi_charge', [4, 5, 6, 7], 10, -1);
+    make('naruto:transform', 'naruto_kyubi_transform', [0, 1, 2, 3, 4, 5, 6, 7, 7], 9, 0);
+    make('kyubi:untransform', 'naruto_kyubi_transform', [7, 6, 5, 4, 3, 2, 1, 0], 12, 0);
   }
 
   constructor(scene: Phaser.Scene, x: number, y: number, private controls: Controls) {
@@ -105,6 +105,7 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
       if (k === 'ras-charge') this.setAction('ras-dash');
       if (k === 'ras-dash') this.setAction('ras-hit');
       if (k === 'transform') this.finishTransform();
+      if (k === 'untransform') this.action = 'none';
     });
   }
 
@@ -123,28 +124,31 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
   private startTransform(): void {
     this.setVelocityX(0);
     this.setAction('transform');
-    this.setTint(0xff5040);
-    this.scene.cameras.main.shake(700, 0.004);
+    this.scene.cameras.main.shake(900, 0.004);
     this.emit('hint', 'MODO 1 CAUDA!');
   }
 
   private finishTransform(): void {
     this.action = 'none';
-    this.clearTint();
     this.kyubi = true;
     this.scene.cameras.main.flash(180, 255, 80, 60);
   }
 
-  private endKyubi(): void {
+  private endKyubi(msg = 'O chakra acabou: voltou ao normal'): void {
     if (!this.kyubi) return;
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const grounded = body.blocked.down || body.touching.down;
+    if (grounded && (this.action === 'none' || this.action === 'punch')) {
+      this.setVelocityX(0);
+      this.setAction('untransform'); // usa o prefixo 'kyubi' antes de desligar
+    }
     this.kyubi = false;
-    this.emit('hint', 'O chakra acabou: voltou ao normal');
+    this.emit('hint', msg);
   }
 
   takeHit(dmg: number, dir: number): boolean {
     const ko = this.power.damage(dmg);
     this.stun = HITSTUN_MS;
-    if (this.action === 'transform') this.clearTint();
     this.action = 'none';
     this.setVelocity(dir * 260, -220);
     this.setTintFill(0xffffff);
@@ -186,7 +190,7 @@ export class Naruto extends Phaser.Physics.Arcade.Sprite {
     if (this.action === 'none') {
       const cost = this.kyubi ? KYUBI_RASENGAN_COST : RASENGAN_COST;
       if (c.pressed('ssj') && onGround) {
-        if (this.kyubi) this.endKyubi();
+        if (this.kyubi) this.endKyubi('Voltou ao normal');
         else if (this.power.ki >= KYUBI_MIN_CHAKRA) this.startTransform();
         else {
           this.emit('no-ki');
