@@ -7,7 +7,20 @@ export const touchState: Record<Action, boolean> = {
   shoot: false, punch: false, ssj: false, kaioken: false, restore: false,
 };
 
+const pendingPresses = new Set<Action>();
+
+export function pressTouchAction(action: Action): void {
+  touchState[action] = true;
+  pendingPresses.add(action);
+}
+
+/** Preserve even a tap released between two game frames. */
+export function consumeTouchPress(action: Action): boolean {
+  return pendingPresses.delete(action);
+}
+
 export function resetTouchState(): void {
+  pendingPresses.clear();
   for (const action of Object.keys(touchState) as Action[]) touchState[action] = false;
 }
 

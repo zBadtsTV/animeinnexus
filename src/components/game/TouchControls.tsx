@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { resetTouchState, touchState, type Action } from "@/game/touch";
+import { pressTouchAction, resetTouchState, touchState, type Action } from "@/game/touch";
 import { SCREEN_IMAGES } from "@/game/fighterAssets";
 import type { CharacterId } from "@/game/net";
 
@@ -7,7 +7,8 @@ function Btn({ img, action, label, className }: { img: string; action: Action; l
   const set = (v: boolean) => (e: React.PointerEvent) => {
     e.preventDefault();
     if (v) e.currentTarget.setPointerCapture(e.pointerId);
-    touchState[action] = v;
+    if (v) pressTouchAction(action);
+    else touchState[action] = false;
   };
   return (
     <button

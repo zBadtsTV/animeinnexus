@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 
-import { touchState, type Action } from './touch';
+import { consumeTouchPress, touchState, type Action } from './touch';
 export { touchState, type Action };
 
 const KEYMAP: Record<Action, string[]> = {
@@ -35,7 +35,8 @@ export class Controls {
     this.prev = this.now;
     this.now = {};
     for (const a of Object.keys(KEYMAP) as Action[]) {
-      this.now[a] = touchState[a] || this.keys[a].some((k) => k.isDown);
+      const tapped = consumeTouchPress(a);
+      this.now[a] = tapped || touchState[a] || this.keys[a].some((k) => k.isDown);
     }
   }
 

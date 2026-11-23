@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { spriteSizeCorrection, worldBoundsCollision } from '../game/spriteGeometry';
 import { SPRITE_OVERRIDES } from '../game/spriteOverrides';
-import { resetTouchState, touchState } from '../game/touch';
+import { consumeTouchPress, pressTouchAction, resetTouchState, touchState } from '../game/touch';
 
 describe('Fighter geometry', () => {
   it('leaves the ceiling open in single and multiplayer without removing side boundaries', () => {
@@ -21,5 +21,11 @@ describe('Fighter geometry', () => {
     touchState.left = true; touchState.shoot = true; touchState.run = true;
     resetTouchState();
     expect(Object.values(touchState).every((down) => !down)).toBe(true);
+  });
+  it('registers a quick attack tap even when released before the next game frame', () => {
+    pressTouchAction('punch');
+    touchState.punch = false;
+    expect(consumeTouchPress('punch')).toBe(true);
+    expect(consumeTouchPress('punch')).toBe(false);
   });
 });

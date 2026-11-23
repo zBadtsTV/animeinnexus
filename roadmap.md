@@ -5,7 +5,7 @@
 - [x] Recortar os movimentos de Kaioken e Sayajin e as novas sequências de carga de ki.
 - [x] Verificar movimentos, pulos e carga de ki no jogo, preservando tiros e transformações.
 - [x] Diminuir sprite do Naruto transformado (Kyubi)
-- [ ] Corrigir desconexões e movimento sincronizado no online.
-- [ ] Remover a colisão com o teto nos dois modos.
-- [ ] Uniformizar o tamanho do Goku nas formas, cargas e reversões, inclusive online.
-- [ ] Conferir movimento e ações por toque, visíveis somente no celular.
+- [x] Corrigir desconexões e movimento sincronizado no online.
+- [x] Remover a colisão com o teto nos dois modos.
+- [x] Uniformizar o tamanho do Goku nas formas, cargas e reversões, inclusive online.
+- [x] Conferir movimento e ações por toque, visíveis somente no celular.
