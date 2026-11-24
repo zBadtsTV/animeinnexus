@@ -4,7 +4,9 @@ const TEXTURE_SCALE: Record<string, number> = {
   kaioken: 0.84,
   ssj_walk: 0.82,
   ssj_run: 0.9,
-  ssj_charge_loop: 0.82,
+  ssj_charge_loop: 1,
+  kaioken_charge_loop: 0.88,
+  kaioken_charge_start: 0.88,
   naruto_kyubi_transform: 0.9,
 };
 

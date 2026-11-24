@@ -64,6 +64,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   readonly character = 'goku' as const;
   facing: Facing = 1;
   private punching = false;
+  private dead = false;
   private stun = 0;
   get energy(): number {
     return this.power.ki;
@@ -209,18 +210,38 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** Levou um golpe: perde vida, é empurrado e fica atordoado um instante. */
-  takeHit(dmg: number, dir: number): boolean {
+  takeHit(dmg: number, dir: number, knockback = 260): boolean {
     const ko = this.power.damage(dmg);
     this.stun = HITSTUN_MS;
-    this.setVelocity(dir * 260, -220);
+    this.setVelocity(dir * knockback, -220);
     this.setTintFill(0xffffff);
     this.scene.time.delayedCall(80, () => this.clearTint());
     if (this.shotState === 'charging') this.shotState = 'idle';
     return ko;
   }
 
+  die(): void {
+    this.dead = true;
+    this.power.hp = 0;
+    this.power.form = 'normal';
+    this.visualForm = 'normal';
+    this.pendingForm = null;
+    this.locked = false;
+    this.punching = false;
+    this.shotState = 'idle';
+    this.setVelocityX(0);
+    this.clearTint();
+    this.anims.play('normal:death');
+    this.syncFrameAnchor();
+  }
+
   /** Reinicia depois de nocaute / queda. */
   respawn(x: number, y: number, hp: number): void {
+    this.dead = false;
+    this.power.form = 'normal';
+    this.visualForm = 'normal';
+    this.locked = false;
+    this.chargeIntroDone = false;
     this.setPosition(x, y);
     this.setVelocity(0, 0);
     this.power.hp = hp;
@@ -334,6 +355,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   // ---------------------------------------------------------------- loop
   override update(delta: number): void {
+    if (this.dead) { this.syncFrameAnchor(); return; }
     const body = this.body as Phaser.Physics.Arcade.Body;
     const onGround = body.blocked.down || body.touching.down;
 

@@ -5,6 +5,8 @@ import { FIGHTER_STRIPS, SCREEN_IMAGES } from '../fighterAssets';
 import type { FormId } from '../forms';
 import { FORM_IDS, FORM_LABEL, KI_BALL_DAMAGE, RESPAWN_FALL_DAMAGE, attackDamage } from '../forms';
 import { Player, SCALE } from '../entities/Player';
+import { Luffy } from '../entities/Luffy';
+import { MATCH_DEATH_LIMIT, remainingLives } from '../combatRules';
 import { Naruto } from '../entities/Naruto';
 import { OVERRIDE_ANCHOR, SPRITE_OVERRIDES } from '../spriteOverrides';
 import { Controls } from '../input';
@@ -18,10 +20,10 @@ export interface GameConfig {
   net?: NetLink;
 }
 
-type Fighter = Player | Naruto;
+type Fighter = Player | Naruto | Luffy;
 interface Target {
   bounds(): Phaser.Geom.Rectangle;
-  hit(dmg: number, dir: number): void;
+  hit(dmg: number, dir: number, knockback?: number): void;
 }
 
 const GROUND_HEIGHT = 90;
@@ -44,9 +46,9 @@ class Dummy implements Target {
   bounds() {
     return this.sprite.getBounds();
   }
-  hit(dmg: number, dir: number) {
+  hit(dmg: number, dir: number, knockback = 260) {
     this.hp = Math.max(0, this.hp - dmg);
-    this.sprite.setVelocity(dir * 180, -160);
+    this.sprite.setVelocity(dir * knockback, -160);
     this.sprite.setTintFill(0xffffff);
     this.scene.time.delayedCall(70, () => this.sprite.clearTint());
     const t = this.scene.add
@@ -80,7 +82,7 @@ class Remote implements Target {
   private tx = 0;
   private ty = 0;
   constructor(private scene: Phaser.Scene, private net: NetLink, x: number, y: number) {
-    this.sprite = scene.add.sprite(x, y, net.remoteCharacter === 'naruto' ? 'naruto_idle' : 'movement_walk', 0).setScale(SCALE).setDepth(4);
+    this.sprite = scene.add.sprite(x, y, net.remoteCharacter === 'naruto' ? 'naruto_idle' : net.remoteCharacter === 'luffy' ? 'luffy_idle' : 'movement_walk', 0).setScale(SCALE).setDepth(4);
     this.sprite.setOrigin(0.5, OVERRIDE_ANCHOR.feetY / OVERRIDE_ANCHOR.h);
     this.tx = x;
     this.ty = y;
@@ -103,8 +105,8 @@ class Remote implements Target {
     const w = 55 * SCALE, h = 180 * SCALE;
     return new Phaser.Geom.Rectangle(this.sprite.x - w / 2, this.sprite.y - h, w, h);
   }
-  hit(dmg: number, dir: number) {
-    this.net.send({ t: 'hit', dmg, dir });
+  hit(dmg: number, dir: number, knockback = 260) {
+    this.net.send({ t: 'hit', dmg, dir, knockback });
     this.sprite.setTintFill(0xffffff);
     this.scene.time.delayedCall(70, () => this.sprite.clearTint());
   }
@@ -127,6 +129,13 @@ export class GameScene extends Phaser.Scene {
   private hintTime = 0;
   private sendTimer = 0;
   private ko = false;
+  private deaths = 0;
+  private enemyDeaths = 0;
+  private ended = false;
+  private invulnerable = 0;
+  private ownPick: CharacterId | undefined;
+  private otherPick: CharacterId | undefined;
+  private stockText!: Phaser.GameObjects.Text;
   private offNet?: () => void;
 
   constructor() {
@@ -138,7 +147,7 @@ export class GameScene extends Phaser.Scene {
     this.solids = [];
     this.dummies = [];
     this.remote = undefined;
-    this.ko = false;
+    this.ko = false; this.deaths = 0; this.enemyDeaths = 0; this.ended = false; this.ownPick = undefined; this.otherPick = undefined;
   }
 
   preload(): void {
@@ -158,6 +167,9 @@ export class GameScene extends Phaser.Scene {
     this.load.image('hud_naruto', SCREEN_IMAGES.hud_naruto);
     this.load.image('hud_goku', SCREEN_IMAGES.hud_goku);
     this.load.image('arena', SCREEN_IMAGES.arena);
+    this.load.image('training', SCREEN_IMAGES.training);
+    this.load.image('hud_luffy', SCREEN_IMAGES.hud_luffy);
+    this.load.image('ki_ball_rasenshuriken', FIGHTER_STRIPS['rasenshuriken'] ?? '');
   }
 
   create(): void {
@@ -165,12 +177,13 @@ export class GameScene extends Phaser.Scene {
     this.controls = new Controls(this);
     Player.createAnimations(this);
     Naruto.createAnimations(this);
+    Luffy.createAnimations(this);
     this.makeDummyTexture();
 
     if (this.cfg.mode === 'multi') this.buildArena();
     else this.buildTrainingGround();
 
-    const C = this.cfg.character === 'naruto' ? Naruto : Player;
+    const C = this.cfg.character === 'naruto' ? Naruto : this.cfg.character === 'luffy' ? Luffy : Player;
     this.player = new C(this, this.spawn.x, this.spawn.y, this.controls);
     this.player.setDepth(5);
     for (const s of this.solids) this.physics.add.collider(this.player, s);
@@ -179,12 +192,12 @@ export class GameScene extends Phaser.Scene {
     this.kiBalls = this.physics.add.group({ allowGravity: false });
     this.remoteBalls = this.physics.add.group({ allowGravity: false });
 
-    this.player.on('fire', (x: number, y: number, dir: 1 | -1, size: number, form: FormId) => {
-      this.spawnKiBall(this.kiBalls, x, y, dir, size, form).setData('dmg', attackDamage(KI_BALL_DAMAGE * size, form));
+    this.player.on('fire', (x: number, y: number, dir: 1 | -1, size: number, form: string) => {
+      this.spawnKiBall(this.kiBalls, x, y, dir, size, form).setData('dmg', form === 'rasenshuriken' ? 24 : attackDamage(KI_BALL_DAMAGE * size, form as FormId));
       this.cfg.net?.send({ t: 'ball', x, y, dir, size, form });
     });
-    this.player.on('melee', (rect: Phaser.Geom.Rectangle, dmg: number, dir: number) => {
-      for (const t of this.targets()) if (Phaser.Geom.Rectangle.Overlaps(rect, t.bounds())) t.hit(dmg, dir);
+    this.player.on('melee', (rect: Phaser.Geom.Rectangle, dmg: number, dir: number, knockback = 260) => {
+      for (const t of this.targets()) if (Phaser.Geom.Rectangle.Overlaps(rect, t.bounds())) t.hit(dmg, dir, knockback);
     });
     this.player.on('no-ki', () => (this.hud.flash = 350));
     this.player.on('hint', (text: string) => this.showHint(text));
@@ -211,6 +224,10 @@ export class GameScene extends Phaser.Scene {
       this.events.once('shutdown', () => this.game.events.off('spawn-dummy', this.spawnDummy, this));
     }
 
+    this.stockText = this.add.text(width / 2, 18, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffffff' }).setOrigin(.5).setDepth(34);
+    const pick = (ch: CharacterId) => { this.ownPick = ch; this.cfg.net?.send({ t: 'pick', ch }); this.tryRematch(); };
+    this.game.events.on('rematch-pick', pick);
+    this.events.once('shutdown', () => this.game.events.off('rematch-pick', pick));
     const net = this.cfg.net;
     if (net) {
       this.remote = new Remote(this, net, net.isHost ? 710 : 250, 260);
@@ -229,21 +246,46 @@ export class GameScene extends Phaser.Scene {
 
   private onNet(m: NetMsg): void {
     if (m.t === 's') this.remote?.apply(m);
-    else if (m.t === 'hit') this.damagePlayer(m.dmg, m.dir);
+    else if (m.t === 'hit') this.damagePlayer(m.dmg, m.dir, m.knockback);
     else if (m.t === 'ball') this.spawnKiBall(this.remoteBalls, m.x, m.y, m.dir as 1 | -1, m.size, m.form);
+    else if (m.t === 'death') { this.enemyDeaths = m.deaths; if (m.deaths >= MATCH_DEATH_LIMIT) this.endMatch(true); }
+    else if (m.t === 'pick') { this.otherPick = m.ch; this.tryRematch(); }
   }
 
-  private damagePlayer(dmg: number, dir: number): void {
-    if (this.ko) return;
-    if (this.player.takeHit(dmg, dir)) this.knockOut();
+  private damagePlayer(dmg: number, dir: number, knockback = 260): void {
+    if (this.ko || this.ended || this.invulnerable > 0) return;
+    if (this.player.takeHit(dmg, dir, knockback)) this.knockOut();
+  }
+
+  private endMatch(won: boolean): void {
+    if (this.ended) return;
+    this.ended = true;
+    this.game.events.emit('match-end', won);
+  }
+
+  private tryRematch(): void {
+    if (!this.ownPick || !this.otherPick || !this.cfg.net) return;
+    this.cfg.character = this.ownPick;
+    this.cfg.net.remoteCharacter = this.otherPick;
+    this.game.events.emit('round-ready', this.ownPick);
+    this.scene.restart(this.cfg);
   }
 
   private knockOut(): void {
+    if (this.ko || this.ended) return;
     this.ko = true;
+    this.player.die();
     this.showHint('K.O.!');
     this.cameras.main.shake(250, 0.01);
+    if (this.cfg.mode === 'multi') {
+      this.deaths++;
+      this.cfg.net?.send({ t: 'death', deaths: this.deaths });
+    }
     this.time.delayedCall(1500, () => {
-      this.player.respawn(this.spawn.x, this.spawn.y, 100);
+      if (this.cfg.mode === 'multi' && this.deaths >= MATCH_DEATH_LIMIT) { this.endMatch(false); return; }
+      if (this.ended) return;
+      this.player.respawn(this.spawn.x, this.spawn.y - 70, 100);
+      this.invulnerable = 1200;
       this.ko = false;
     });
   }
@@ -257,11 +299,14 @@ export class GameScene extends Phaser.Scene {
 
   private buildTrainingGround(): void {
     const { width, height } = this.scale;
-    const ground = this.add.rectangle(width / 2, height - GROUND_HEIGHT / 2, width, GROUND_HEIGHT, 0x4caf50);
-    this.add.rectangle(width / 2, height - GROUND_HEIGHT + 4, width, 8, 0x66d36b);
+    this.add.image(0, 0, 'training').setOrigin(0).setDisplaySize(width, height).setDepth(-10);
+    // The near edge of the stone floor is the only solid surface in this artwork.
+    const floorY = height * .68;
+    const ground = this.add.rectangle(width / 2, floorY + 30, width, 60, 0, 0);
     this.physics.add.existing(ground, true);
     this.solids.push(ground);
-    this.spawn = { x: width / 2, y: height - GROUND_HEIGHT };
+    this.spawn = { x: width / 2, y: floorY };
+
   }
 
   /** Arena flutuante (só multiplayer): plataforma principal + 3 flutuantes atravessáveis por baixo. */
@@ -301,18 +346,16 @@ export class GameScene extends Phaser.Scene {
 
   override update(_time: number, delta: number): void {
     this.controls.update();
-    if (!this.ko) this.player.update(delta);
+    this.invulnerable = Math.max(0, this.invulnerable - delta);
+    if (!this.ended || this.ko) this.player.update(delta);
+    if (this.ended && !this.ko) this.player.setVelocityX(0);
+    if (!this.ko && !this.ended && this.player instanceof Naruto) {
+      for (const target of this.targets()) if (this.player.tryRasenganContact(target.bounds())) break;
+    }
     const { width, height } = this.scale;
 
     // caiu da arena
-    if (this.player.y > height + 120 && !this.ko) {
-      const hp = this.player.hp - RESPAWN_FALL_DAMAGE;
-      if (hp <= 0) this.knockOut();
-      else {
-        this.player.respawn(this.spawn.x, this.spawn.y - 200, hp);
-        this.showHint('Caiu da arena! -20 de vida');
-      }
-    }
+    if (this.player.y > height + 120 && !this.ko && !this.ended) this.knockOut();
 
     for (const ball of [...this.kiBalls.getChildren(), ...this.remoteBalls.getChildren()] as Phaser.Physics.Arcade.Sprite[]) {
       if (ball.x < -150 || ball.x > width + 150) ball.destroy();
@@ -344,7 +387,8 @@ export class GameScene extends Phaser.Scene {
 
     this.hud.update(this.player.hp, this.player.energy, this.player.form, delta);
     if (this.remote && this.enemyHud) this.enemyHud.update(this.remote.hp, this.remote.energy, this.remote.form, delta);
-    this.formText.setText(this.player.character === 'goku' ? FORM_LABEL[this.player.form as FormId] : '');
+    this.formText.setText(this.player.character === 'goku' ? FORM_LABEL[this.player.form as FormId] : this.player.form === 'sage' ? 'MODO SÁBIO' : this.player.form === 'kyubi' ? '1 CAUDA' : this.player.form === 'haki' ? 'HAKI' : this.player.form === 'gear' ? 'GEAR SECOND' : '');
+    this.stockText.setText(this.cfg.mode === 'multi' ? `${remainingLives(this.deaths)} VIDAS × ${remainingLives(this.enemyDeaths)} VIDAS` : '');
     if (this.hintTime > 0) {
       this.hintTime -= delta;
       this.hintText.setAlpha(Phaser.Math.Clamp(this.hintTime / 400, 0, 1));

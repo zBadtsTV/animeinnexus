@@ -1,13 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type CharacterId = 'goku' | 'naruto';
+export type CharacterId = 'goku' | 'naruto' | 'luffy';
 
 /** Mensagens trocadas entre os dois jogadores. */
 export type NetMsg =
   | { t: 'hello'; ch: CharacterId }
   | { t: 's'; x: number; y: number; tex: string; fr: number | string; flip: boolean; ox: number; oy: number; scale: number; hp: number; en: number; form: string }
-  | { t: 'hit'; dmg: number; dir: number }
-  | { t: 'ball'; x: number; y: number; dir: number; size: number; form: string };
+  | { t: 'hit'; dmg: number; dir: number; knockback?: number }
+  | { t: 'ball'; x: number; y: number; dir: number; size: number; form: string }
+  | { t: 'death'; deaths: number }
+  | { t: 'rematch' }
+  | { t: 'pick'; ch: CharacterId };
 
 export interface NetLink {
   isHost: boolean;

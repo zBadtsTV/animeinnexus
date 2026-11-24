@@ -11,6 +11,7 @@ import kaiokenChargeStart from './assets/kaioken_charge_start.png.asset.json';
 import ssjChargeLoop from './assets/ssj_charge_loop.png.asset.json';
 import ssjWalk from './assets/ssj_walk.png.asset.json';
 import ssjRun from './assets/ssj_run.png.asset.json';
+import { EXPANSION_OVERRIDES } from './updateAssets';
 
 // Uploaded strips face right. Left movement mirrors the same complete cycle.
 // Terminal movement poses duplicate the first pose: omit them at the loop seam.
@@ -33,6 +34,7 @@ export const SPRITE_OVERRIDES = [
   { texture: 'ssj_charge_loop', url: ssjChargeLoop.url, keys: ['ssj:charge-start'], frames: [0, 1, 2], fps: 10, repeat: 0 },
   { texture: 'ssj_transform', url: ssjTransform.url, keys: ['ssj:revert'], frames: [7, 6, 5, 4, 3, 2, 1, 0], fps: 12, repeat: 0 },
   { texture: 'kaioken_transform', url: kaiokenTransform.url, keys: ['kaioken:revert'], frames: [6, 5, 4, 3, 2, 1, 0], fps: 12, repeat: 0 },
+  ...EXPANSION_OVERRIDES,
 ];
 
 export const OVERRIDE_ANCHOR = { w: 256, h: 300, feetY: 280, ax: 128 };

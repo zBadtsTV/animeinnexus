@@ -4,6 +4,10 @@ import type { CharacterId } from '../net';
 /** Interior das barras no painel original (px): [topo esq, topo dir, base esq, base dir], y topo/base. */
 type Bar = { y0: number; y1: number; tl: number; tr: number; bl: number; br: number };
 const GEOMETRY: Record<CharacterId, { hp: Bar; en: Bar }> = {
+  luffy: {
+    hp: { y0: 303, y1: 412, tl: 613, tr: 2070, bl: 560, br: 2000 },
+    en: { y0: 475, y1: 573, tl: 510, tr: 1925, bl: 443, br: 1856 },
+  },
   naruto: {
     hp: { y0: 167, y1: 217, tl: 410, tr: 1940, bl: 380, br: 1893 },
     en: { y0: 254, y1: 305, tl: 366, tr: 1846, bl: 336, br: 1800 },
@@ -24,7 +28,7 @@ export class Hud {
   flash = 0;
 
   constructor(scene: Phaser.Scene, private ch: CharacterId, private x: number, private y: number, width: number) {
-    this.s = width / PANEL_W;
+    this.s = width / (ch === 'luffy' ? 2172 : PANEL_W);
     this.g = scene.add.graphics().setDepth(32.5).setScrollFactor(0);
     scene.add.image(x, y, `hud_${ch}`).setOrigin(0).setScale(this.s).setDepth(32).setScrollFactor(0);
     const geo = GEOMETRY[ch];
@@ -61,6 +65,8 @@ export class Hud {
   update(hp: number, energy: number, form: string, delta: number): void {
     const geo = GEOMETRY[this.ch];
     this.g.clear();
+    this.fill(geo.hp, 1, 0x10151a);
+    this.fill(geo.en, 1, 0x10151a);
     const hpColor = 0x34d84a; // vida sempre verde
     this.fill(geo.hp, hp / 100, hpColor);
     let enColor = 0x2f8cff; // chakra e ki sempre azuis
@@ -70,6 +76,6 @@ export class Hud {
     }
     this.fill(geo.en, energy / 100, enColor);
     this.hpText.setText(`VIDA ${Math.ceil(hp)}`);
-    this.enText.setText(`${this.ch === 'naruto' ? 'CHAKRA' : 'KI'} ${Math.floor(energy)}%`);
+    this.enText.setText(`${this.ch === 'naruto' ? 'CHAKRA' : this.ch === 'luffy' ? 'ENERGIA' : 'KI'} ${Math.floor(energy)}%`);
   }
 }
